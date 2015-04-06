@@ -1,0 +1,5 @@
+# PromptSecondaryLTUnb/data
+
+This is the directory to hold the data used to train the classifiers.
+Because the files are quite large, what it in fact holds are paths to the
+files, which users then need to copy over in order to run the python scripts.o
