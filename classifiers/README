@@ -1,0 +1,5 @@
+# PromptSecondaryLTUnb/classifiers
+
+This directory holds the trained classifiers and information on how
+each one was trained (i.e. what the input data files were, which
+code revision was used, etc.)
