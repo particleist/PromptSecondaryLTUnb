@@ -1,4 +1,17 @@
 # PromptSecondaryLTUnb/python
 
-This is the directory for all the scripts which do the actual work
+This is the directory for all the python scripts, see the README files in the
+relevant subdirectories for more details.
+
+C++ scripts live in the scripts directory.
+
 Data is read from the ../data directory
+
+Scripts in this directory are : 
+
+commonoptions.py          : holds common options for all options parsers for other scripts
+
+pruneTuple_SepSSFromOS.py : prunes the larger tuple in the "data" directory into two smaller "signal"
+                            and "background" tuples which can be used to train the classifiers, whether
+                            TMVA or scikit-learn or whatever, to separate tracks associated with the
+                            same side of the decay, and tracks associated with the other side of the decay.

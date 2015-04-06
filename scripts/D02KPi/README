@@ -1,0 +1,8 @@
+# PromptSecondaryLTUnb/scripts/D02KPi
+
+Scripts in this directory are
+
+TMVAClassify_SepSSFromOS : train the TMVA classifier which separates the tracks associated with the
+                           same side of the decay from the tracks associated with the other side of
+                           the decay. Uses ntuples prepared with the PruneTuple_SepSSFromOS.py script
+                           in the python scripts directory.

@@ -1,0 +1,9 @@
+# PromptSecondaryLTUnb/scripts
+
+This is the directory for all the C++ scripts which do the actual work,
+which means TMVA scripts but also some ntuple manipulation scripts. See
+the READMES in the subdirectories for more details. 
+
+Python scripts live in the python directory.
+
+Data is read from the ../data directory
