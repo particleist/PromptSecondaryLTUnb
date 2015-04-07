@@ -6,10 +6,9 @@ from array import *
 
 arraysforouttree = []
 
-def puttrackinouttree(track_P) :
-  arraysforouttree[1][0] = track_P.Angle(D0_P)
-  arraysforouttree[2][0] = track_P.Angle(K_P)
-  arraysforouttree[3][0] = track_P.Angle(pi_P)
+def puttrackinouttree(track_P,D_P,ndchildren) :
+  for i in range(0,ndchildren+1) :
+    arraysforouttree[i+1][0] = track_P.Angle(D_P[i])
 
 '''
 This script prunes the larger tuple in the "data" directory into two smaller "signal"
@@ -22,8 +21,10 @@ from optparse import OptionParser
 parser = OptionParser()
 from commonoptions import setupparser
 parser = setupparser(parser)
-parser.add_option("--infile", action="store", dest="inputfile", default = "../data/mcd02kpi_tracks5_merged.root")
+parser.add_option("--infile", action="store", dest="inputfile", default = "../data/mcd02kpi_tracks6_merged.root")
 parser.add_option("--intreename", action="store", dest="intreename", default = "DecayTree")
+parser.add_option("--trainfraction", action="store", dest="trainfraction", default = "0.1")
+parser.add_option("--ndchildren", action="store", dest="ndchildren", default = "2")
 parser.add_option("--writeos", action="store_true", dest="writeos", default = False)
 parser.add_option("--writess", action="store_true", dest="writess", default = False)
 parser.add_option("--outfileos", action="store", dest="outfileos", default = "../data/mcd02kpi_os_forsepssfromos.root")
@@ -40,11 +41,16 @@ if options.writeos and options.writess :
 # Set up some common variables based on what we are doing
 outfilename = options.outfileos if options.writeos else options.outfiless
 varname     = "other" if options.writeos else "same"
+try : 
+  ndchildren = int(options.ndchildren)
+except : 
+  print "The number of D children must be an integer, please try again."
+  sys.exit(1)
 
 # Get the input tree
 infile = TFile(options.inputfile)
 intree = infile.Get(options.intreename)
-numentries_intree = intree.GetEntries()
+numentries_intree = int(intree.GetEntries()*float(options.trainfraction))
 
 '''
 Now we prepare the output trees.
@@ -58,19 +64,22 @@ naming convention eventually.
 outfile = TFile(outfilename,"recreate")
 outtree = TTree(options.intreename,options.intreename)
 arraysforouttree.append(array('i',[0]))
-for i in range(0,3) :
+for i in range(0,ndchildren+1) :
   arraysforouttree.append(array('f',[0]))
 outtree.Branch('nTrack',arraysforouttree[0],'nTrack/I')
 outtree.Branch('track_angletod',arraysforouttree[1],'track_angletod[nTrack]/F')
-outtree.Branch('track_angletokaon',arraysforouttree[2],'track_angletokaon[nTrack]/F')
-outtree.Branch('track_angletopion',arraysforouttree[3],'track_angletopion[nTrack]/F')
+for i in range(1,ndchildren+1) :
+  outtree.Branch('track_angletochild'+str(i),arraysforouttree[i+1],'track_angletochild'+str(i)+'[nTrack]/F')
 
 for entry in range(0,numentries_intree) : 
   intree.GetEntry(entry)
-  D0_P = TVector3(intree.D0_PX,intree.D0_PY,intree.D0_PZ)
-  K_P  = TVector3(intree.K_PX,intree.K_PY,intree.K_PZ)
-  pi_P = TVector3(intree.pi_PX,intree.pi_PY,intree.pi_PZ)
-  
+  D_P = []
+  D_P.append(TVector3(intree.D_PX,intree.D_PY,intree.D_PZ))
+  for i in range(1,ndchildren+1) :
+    D_P.append(TVector3(intree.__getattr__('DChild'+str(i)+'_PX'),
+                        intree.__getattr__('DChild'+str(i)+'_PY'),
+                        intree.__getattr__('DChild'+str(i)+'_PZ')))
+ 
   array_hpt_px =  intree.__getattr__('hpt_'+varname+'_px')
   array_hpt_py =  intree.__getattr__('hpt_'+varname+'_py')
   array_hpt_pz =  intree.__getattr__('hpt_'+varname+'_pz')
@@ -82,20 +91,12 @@ for entry in range(0,numentries_intree) :
   for track in range(0,array_hpt_px.__len__() ) :
     arraysforouttree[0][0] = 1
     track_P = TVector3(array_hpt_px[track],array_hpt_py[track],array_hpt_pz[track])
-    # This bit of dirty coding can be removed once we get rid of  
-    # the D0 children in this array in the input ntuple
-    if track_P.Angle(K_P) < 0.001 :
-      continue
-    puttrackinouttree(track_P)
+    puttrackinouttree(track_P,D_P,ndchildren)
     outtree.Fill()
   for track in range(0,array_vdchi2_px.__len__() ) :
     arraysforouttree[0][0] = 1
     track_P = TVector3(array_vdchi2_px[track],array_vdchi2_py[track],array_vdchi2_pz[track])
-    # This bit of dirty coding can be removed once we get rid of  
-    # the D0 children in this array in the input ntuple
-    if track_P.Angle(K_P) < 0.001 :
-      continue
-    puttrackinouttree(track_P)
+    puttrackinouttree(track_P,D_P,ndchildren)
     outtree.Fill()
 
 outfile.Write()

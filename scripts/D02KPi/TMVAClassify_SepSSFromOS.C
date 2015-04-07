@@ -189,8 +189,8 @@ void TMVAClassify_SepSSFromOS( TString myMethodList = "" )
    // note that you may also use variable expressions, such as: "3*var1/var2*abs(var3)"
    // [all types of expressions that can also be parsed by TTree::Draw( "expression" )]
    factory->AddVariable( "track_angletod",       "Angle to D0",   "",  'F' );      
-   factory->AddVariable( "track_angletokaon",    "Angle to kaon from D0",         "",  'F' );   
-   factory->AddVariable( "track_angletopion",    "Angle to pion from D0",    "",  'F' );
+   factory->AddVariable( "track_angletochild1",    "Angle to kaon from D0",    "",  'F' );   
+   factory->AddVariable( "track_angletochild2",    "Angle to pion from D0",    "",  'F' );
 
    // You can add so-called "Spectator variables", which are not used in the MVA training,
    // but will appear in the final "TestTree" produced by TMVA. This TestTree will contain the
@@ -221,7 +221,7 @@ void TMVAClassify_SepSSFromOS( TString myMethodList = "" )
 
    // Tell the factory how to use the training and testing events
    factory->PrepareTrainingAndTestTree( mycuts, mycutb,
-                                        "nTrain_Signal=10000:nTrain_Background=10000:nTest_Signal=20000:nTest_Background=20000:SplitMode=Random:NormMode=NumEvents:!V" );
+                                        "nTrain_Signal=20000:nTrain_Background=20000:nTest_Signal=20000:nTest_Background=20000:SplitMode=Random:NormMode=NumEvents:!V" );
 
    // ---- Book MVA methods
    //
@@ -377,7 +377,7 @@ void TMVAClassify_SepSSFromOS( TString myMethodList = "" )
    // Boosted Decision Trees
    if (Use["BDTG"]) // Gradient Boost
       factory->BookMethod( TMVA::Types::kBDT, "BDTG",
-                           "!H:!V:NTrees=2000:MinNodeSize=2.5%:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.5:nCuts=20:MaxDepth=3" );
+                           "!H:!V:NTrees=2000:MinNodeSize=2.5%:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.5:nCuts=10:MaxDepth=2" );
 
    if (Use["BDT"])  // Adaptive Boost
       factory->BookMethod( TMVA::Types::kBDT, "BDT",
@@ -434,5 +434,5 @@ void TMVAClassify_SepSSFromOS( TString myMethodList = "" )
    delete factory;
 
    // Launch the GUI for the root macros
-   //if (!gROOT->IsBatch()) TMVAGui( outfileName );
+   if (!gROOT->IsBatch()) TMVAGui( outfileName );
 }
