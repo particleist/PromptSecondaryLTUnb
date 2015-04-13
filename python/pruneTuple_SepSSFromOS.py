@@ -5,10 +5,33 @@ from math import *
 from array import *
 
 arraysforouttree = []
+arraysforouttree_doca = []
 
 def puttrackinouttree(track_P,D_P,ndchildren) :
   for i in range(0,ndchildren+1) :
     arraysforouttree[i+1][0] = track_P.Angle(D_P[i])
+
+def distance(M0, V0, M1, V1):
+    """ Distance between line 0 passing via M0, of direction
+    V0 and line 1 passing through M1, of direction V1 """
+    dist = -1
+    if V0.Cross(V1).Mag() == 0:
+        # Same vector, we have the distance between
+        # a point and a line
+        M = M1 - M0
+        dist = M.Cross(V0).Mag() / V0.Mag()
+    else:
+        # general case, using teh produit mixte
+        M = M1 - M0
+        x  = abs(M.Cross(V0) * V1)
+        y = (V0.Cross(V1)).Mag()
+        dist = x / y
+    return dist
+
+def puttrackdocainouttree(track_P, track_FS, D_P, D_FS, ndchildren) :
+  for i in range(0,ndchildren+1) :
+    arraysforouttree_doca[i+1][0] = distance(track_FS, track_P, D_FS[i], D_P[i])
+
 
 '''
 This script prunes the larger tuple in the "data" directory into two smaller "signal"
@@ -51,6 +74,7 @@ except :
 infile = TFile(options.inputfile)
 intree = infile.Get(options.intreename)
 numentries_intree = int(intree.GetEntries()*float(options.trainfraction))
+print "Processing number of events: %d" % numentries_intree
 
 '''
 Now we prepare the output trees.
@@ -63,16 +87,29 @@ naming convention eventually.
 
 outfile = TFile(outfilename,"recreate")
 outtree = TTree(options.intreename,options.intreename)
+
 arraysforouttree.append(array('i',[0]))
 for i in range(0,ndchildren+1) :
   arraysforouttree.append(array('f',[0]))
+
+arraysforouttree_doca.append(array('i',[0]))
+for i in range(0,ndchildren+1) :
+  arraysforouttree_doca.append(array('f',[0]))
+
+
 outtree.Branch('nTrack',arraysforouttree[0],'nTrack/I')
+outtree.Branch('nTrack',arraysforouttree_doca[0],'nTrack/I')
 outtree.Branch('track_angletod',arraysforouttree[1],'track_angletod[nTrack]/F')
+outtree.Branch('track_docatod',arraysforouttree_doca[1],'track_docatod[nTrack]/F')
 for i in range(1,ndchildren+1) :
   outtree.Branch('track_angletochild'+str(i),arraysforouttree[i+1],'track_angletochild'+str(i)+'[nTrack]/F')
+  outtree.Branch('track_docatochild'+str(i),arraysforouttree_doca[i+1],'track_docatochild'+str(i)+'[nTrack]/F')
+
 
 for entry in range(0,numentries_intree) : 
+  # Iterating on tuple entries
   intree.GetEntry(entry)
+
   D_P = []
   D_P.append(TVector3(intree.D_PX,intree.D_PY,intree.D_PZ))
   for i in range(1,ndchildren+1) :
@@ -98,6 +135,37 @@ for entry in range(0,numentries_intree) :
     track_P = TVector3(array_vdchi2_px[track],array_vdchi2_py[track],array_vdchi2_pz[track])
     puttrackinouttree(track_P,D_P,ndchildren)
     outtree.Fill()
+
+  # Now preparing the data with the first state position
+  D_FS = []
+  D_FS.append(TVector3(intree.D_FSX,intree.D_FSY,intree.D_FSZ))
+  for i in range(1,ndchildren+1) :
+    D_FS.append(TVector3(intree.__getattr__('DChild'+str(i)+'_FSX'),
+                        intree.__getattr__('DChild'+str(i)+'_FSY'),
+                        intree.__getattr__('DChild'+str(i)+'_FSZ')))
+
+  array_hpt_fsx =  intree.__getattr__('hpt_'+varname+'_FSX')
+  array_hpt_fsy =  intree.__getattr__('hpt_'+varname+'_FSY')
+  array_hpt_fsz =  intree.__getattr__('hpt_'+varname+'_FSZ')
+
+  array_vdchi2_fsx =  intree.__getattr__('vdchi2_'+varname+'_FSX')
+  array_vdchi2_fsy =  intree.__getattr__('vdchi2_'+varname+'_FSY')
+  array_vdchi2_fsz =  intree.__getattr__('vdchi2_'+varname+'_FSZ')
+
+  for track in range(0,array_hpt_px.__len__() ) :
+    arraysforouttree[0][0] = 1
+    track_P = TVector3(array_hpt_px[track],array_hpt_py[track],array_hpt_pz[track])
+    track_FS = TVector3(array_hpt_px[track],array_hpt_py[track],array_hpt_pz[track])
+    #print track_P, "=", track_FS, "=",  D_P, "=", D_FS, "=", ndchildren
+    puttrackdocainouttree(track_P, track_FS, D_P, D_FS, ndchildren)
+    outtree.Fill()
+  for track in range(0,array_vdchi2_px.__len__() ) :
+    arraysforouttree[0][0] = 1
+    track_P = TVector3(array_vdchi2_px[track],array_vdchi2_py[track],array_vdchi2_pz[track])
+    track_FS = TVector3(array_vdchi2_px[track],array_vdchi2_py[track],array_vdchi2_pz[track])
+    puttrackdocainouttree(track_P, track_FS, D_P, D_FS, ndchildren)
+    outtree.Fill()
+
 
 outfile.Write()
 outfile.Close()
