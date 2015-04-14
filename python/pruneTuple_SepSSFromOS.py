@@ -42,7 +42,7 @@ def puttrackdocainouttree(track_P, track_FS, D_P, D_FS, ndchildren) :
     arraysforouttree_doca[i+1][0] = distance(track_FS, track_P, D_FS[i], D_P[i])
 
 def puttrackddistinouttree(track_P, track_FS, Vertex) :
-  arraysforouttree_ddist[0] = distanceToPoint(track_FS, track_P, Vertex)
+  arraysforouttree_ddist[0][0] = distanceToPoint(track_FS, track_P, Vertex)
 
 '''
 This script prunes the larger tuple in the "data" directory into two smaller "signal"
@@ -117,7 +117,7 @@ outtree.Branch('tracktype', arraysforttype[0],'tracktype/I')
 outtree.Branch('nTrack',arraysforouttree[0],'nTrack/I')
 outtree.Branch('track_angletod',arraysforouttree[1],'track_angletod[nTrack]/F')
 outtree.Branch('track_docatod',arraysforouttree_doca[1],'track_docatod[nTrack]/F')
-outtree.Branch('track_devdist',arraysforouttree_ddist[0],'track_devdist/F')
+outtree.Branch('track_devdist',arraysforouttree_ddist[0],'track_devdist[nTrack]/F')
 
 for i in range(1,ndchildren+1) :
   outtree.Branch('track_angletochild'+str(i),arraysforouttree[i+1],'track_angletochild'+str(i)+'[nTrack]/F')
