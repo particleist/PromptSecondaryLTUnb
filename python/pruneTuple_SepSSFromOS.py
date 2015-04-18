@@ -7,6 +7,7 @@ from array import *
 arraysforouttree = []
 arraysforouttree_doca = []
 arraysforouttree_ddist = []
+arraysforouttree_ptratio = []
 arraysforttype = []
 
 def puttrackinouttree(track_P,D_P,ndchildren) :
@@ -41,6 +42,12 @@ def puttrackdocainouttree(track_P, track_FS, D_P, D_FS, ndchildren) :
   for i in range(0,ndchildren+1) :
     arraysforouttree_doca[i+1][0] = distance(track_FS, track_P, D_FS[i], D_P[i])
 
+def puttrackptratioinouttree(track_P, D_P, ndchildren) :
+  for i in range(0,ndchildren+1) :
+    track_PT = Math.sqrt(track_P.x()**2 + track_P.y()**2)
+    D_PT = Math.sqrt(D_P[i].x()**2 + D_P[i].y()**2)
+    arraysforouttree_ptratio[i+1][0] = track_PT / D_PT
+
 def puttrackddistinouttree(track_P, track_FS, Vertex) :
   arraysforouttree_ddist[0][0] = distanceToPoint(track_FS, track_P, Vertex)
 
@@ -55,7 +62,7 @@ from optparse import OptionParser
 parser = OptionParser()
 from commonoptions import setupparser
 parser = setupparser(parser)
-parser.add_option("--infile", action="store", dest="inputfile", default = "../data/mcd02kpi_tracks6_merged.root")
+parser.add_option("--infile", action="store", dest="inputfile", default = "../data/mcd02kpi_tracks7_merged.root")
 parser.add_option("--intreename", action="store", dest="intreename", default = "DecayTree")
 parser.add_option("--trainfraction", action="store", dest="trainfraction", default = "0.1")
 parser.add_option("--ndchildren", action="store", dest="ndchildren", default = "2")
@@ -110,6 +117,10 @@ arraysforouttree_doca.append(array('i',[0]))
 for i in range(0,ndchildren+1) :
   arraysforouttree_doca.append(array('f',[0]))
 
+arraysforouttree_ptratio.append(array('i',[0]))
+for i in range(0,ndchildren+1) :
+  arraysforouttree_ptratio.append(array('f',[0]))
+
 arraysforouttree_ddist.append(array('f',[0]))
 arraysforttype.append(array('i',[0]))
 
@@ -118,10 +129,11 @@ outtree.Branch('nTrack',arraysforouttree[0],'nTrack/I')
 outtree.Branch('track_angletod',arraysforouttree[1],'track_angletod[nTrack]/F')
 outtree.Branch('track_docatod',arraysforouttree_doca[1],'track_docatod[nTrack]/F')
 outtree.Branch('track_devdist',arraysforouttree_ddist[0],'track_devdist[nTrack]/F')
-
+outtree.Branch('track_ptratiod',arraysforouttree_ddist[0],'track_ptratiod[nTrack]/F')
 for i in range(1,ndchildren+1) :
   outtree.Branch('track_angletochild'+str(i),arraysforouttree[i+1],'track_angletochild'+str(i)+'[nTrack]/F')
   outtree.Branch('track_docatochild'+str(i),arraysforouttree_doca[i+1],'track_docatochild'+str(i)+'[nTrack]/F')
+  outtree.Branch('track_ptratiochild'+str(i),arraysforouttree_doca[i+1],'track_ptratiochild'+str(i)+'[nTrack]/F')
 
 # Iterating on tuple entries
 #########################################################################
@@ -170,6 +182,8 @@ for entry in range(0,numentries_intree) :
 
     track_FS = TVector3(array_hpt_px[track],array_hpt_py[track],array_hpt_pz[track])
     puttrackdocainouttree(track_P, track_FS, D_P, D_FS, ndchildren)
+
+    puttrackptratioinouttree(track_P, D_P, ndchildren)
 
     puttrackddistinouttree(track_P, track_FS, D_EV)
 
