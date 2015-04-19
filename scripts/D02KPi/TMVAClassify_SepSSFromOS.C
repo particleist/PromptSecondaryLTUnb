@@ -195,6 +195,17 @@ void TMVAClassify_SepSSFromOS( TString myMethodList = "" )
    //factory->AddVariable( "log(track_docatochild1)",   "log(DOCA to kaon from D0)",    "",  'F' );
    //factory->AddVariable( "log(track_docatochild2)",   "log(DOCA to pion from D0)",    "",  'F' );
 
+   factory->AddVariable( "track_docatod",       "Distance to D0 trajectory",   "",  'F' );      
+   factory->AddVariable( "track_docatochild1",       "Distance to kaon trajectory",   "",  'F' );      
+   factory->AddVariable( "track_docatochild2",       "Distance to pion trajectory",   "",  'F' );      
+
+   factory->AddVariable( "track_devdist",       "Distance to D0 end vertex",   "",  'F' );      
+
+   factory->AddVariable( "track_ptratiod",       "Ratio track PT to D0 PT  ",   "",  'F' );      
+   factory->AddVariable( "track_ptratiochild1",       "Ratio track PT to kaon PT",   "",  'F' );      
+   factory->AddVariable( "track_ptratiochild2",       "Distance track PT to pion PT",   "",  'F' );      
+
+
    // You can add so-called "Spectator variables", which are not used in the MVA training,
    // but will appear in the final "TestTree" produced by TMVA. This TestTree will contain the
    // input variables, the response values of all trained MVAs, and the spectator variables
