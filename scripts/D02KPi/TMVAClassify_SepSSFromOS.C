@@ -192,12 +192,12 @@ void TMVAClassify_SepSSFromOS( TString myMethodList = "" )
    factory->AddVariable( "track_angletochild1",  "Angle to kaon from D0",    "",  'F' );   
    factory->AddVariable( "track_angletochild2",  "Angle to pion from D0",    "",  'F' );
    factory->AddVariable( "log(track_devdist)",   "log(DOCA to D0 vertex)",    "",  'F' );
-   //factory->AddVariable( "log(track_docatochild1)",   "log(DOCA to kaon from D0)",    "",  'F' );
-   //factory->AddVariable( "log(track_docatochild2)",   "log(DOCA to pion from D0)",    "",  'F' );
-   //factory->AddVariable( "log(track_docatod)",       "Distance to D0 trajectory",   "",  'F' );      
-   factory->AddVariable( "track_ptratiod",       "Ratio track PT to D0 PT  ",   "",  'F' );      
-   factory->AddVariable( "track_ptratiochild1",       "Ratio track PT to kaon PT",   "",  'F' );      
-   factory->AddVariable( "track_ptratiochild2",       "Distance track PT to pion PT",   "",  'F' );      
+   factory->AddVariable( "log(track_docatochild1)",   "log(DOCA to kaon from D0)",    "",  'F' );
+   factory->AddVariable( "log(track_docatochild2)",   "log(DOCA to pion from D0)",    "",  'F' );
+   factory->AddVariable( "log(track_docatod)",       "Distance to D0 trajectory",   "",  'F' );      
+   //factory->AddVariable( "track_ptratiod",       "Ratio track PT to D0 PT  ",   "",  'F' );      
+   //factory->AddVariable( "track_ptratiochild1",       "Ratio track PT to kaon PT",   "",  'F' );      
+   //factory->AddVariable( "track_ptratiochild2",       "Distance track PT to pion PT",   "",  'F' );      
 
 
    // You can add so-called "Spectator variables", which are not used in the MVA training,
