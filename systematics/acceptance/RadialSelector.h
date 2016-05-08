@@ -1,3 +1,11 @@
+/*
+ * TSelector to iterate though the TTree of D0 to K pi 
+ * decays and try to identify the effect of the 4 mm
+ * radius cut.
+ *
+ */
+
+
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
 // Sat Apr 30 17:01:38 2016 by ROOT version 6.06/02
@@ -18,6 +26,10 @@
 #include <TH1D.h>
 #include <TCanvas.h>
 
+
+/**
+ * Definition of our TSelector
+ */
 class RadialSelector : public TSelector {
 public :
    TTreeReader     fReader;  //!the tree reader
@@ -39,16 +51,12 @@ public :
    TTreeReaderValue<Double_t> D_PVX = {fReader, "D_PVX"};
    TTreeReaderValue<Double_t> D_PVY = {fReader, "D_PVY"};
    TTreeReaderValue<Double_t> D_PVZ = {fReader, "D_PVZ"};
-
    TTreeReaderValue<Int_t> D_FROMB = {fReader, "D_FROMB"};
    TTreeReaderValue<Double_t> D_BPVDIRA = {fReader, "D_BPVDIRA"};
    TTreeReaderValue<Double_t> D_BPVLTIME = {fReader, "D_BPVLTIME"};
    // Decay time w.r.t. BPV, t = (flight distance) * (mass) / (momentum).
 
-   // Internal counter
-   double_t mmTotal;
-   int      eventCount;
-   TCanvas *c1;
+   // Our histograms
    TH1D *histMM;
    TH1D *histPVz;
    TH1D *histPVr;
@@ -64,11 +72,10 @@ public :
    TH1D *histAcceptanceRatio;
    TH1D *histCount;
 
-
    // Some constants
    const Double_t HIST_ACCEPTANCE_MAX = 0.5;
    
- RadialSelector(TTree * /*tree*/ =0) : mmTotal(0), eventCount(0),
+ RadialSelector(TTree * /*tree*/ =0) :
      histMM(nullptr),
      histPVz(nullptr),
      histPVr(nullptr),
@@ -99,9 +106,23 @@ public :
    virtual void    SlaveTerminate();
    virtual void    Terminate();
 
-   // Util methods
-   Double_t GetRadius(Double_t z, Double_t px, Double_t py, Double_t pz, Double_t vx, Double_t vy, Double_t vz);
-   Double_t GetZforRadius(Double_t R, Double_t px, Double_t py, Double_t pz, Double_t vx, Double_t vy, Double_t vz);
+   /**
+    * Finds z for which the trajectory of the particle defined by a primary vertex
+    * (pvy, pvy, pvz) and an end vertex (evx, evy, evy) would exceed a distance
+    * of R with the z axis (returns Nan if no solution).
+    */
+   Double_t GetZforRadius(Double_t R,
+			  Double_t pvx, Double_t pvy, Double_t pvz,
+			  Double_t evx, Double_t evy, Double_t evz);
+
+   /**
+    * Returns the distance to the z axis at z=z0,  for the trajectory of the 
+    * particle defined by a primary vertex (pvy, pvy, pvz) and 
+    *an end vertex (evx, evy, evy).
+    */
+   Double_t GetRadius(Double_t z,
+		      Double_t pvx, Double_t pvy, Double_t pvz,
+		      Double_t evx, Double_t evy, Double_t evz);
       
    ClassDef(RadialSelector,0);
 };
@@ -128,7 +149,6 @@ Bool_t RadialSelector::Notify()
    // is started when using PROOF. It is normally not necessary to make changes
    // to the generated code, but the routine can be extended by the
    // user if needed. The return value is currently not used.
-
    return kTRUE;
 }
 

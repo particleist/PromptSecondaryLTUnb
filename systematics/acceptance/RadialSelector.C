@@ -1,4 +1,5 @@
 #define RadialSelector_cxx
+
 // The class definition in RadialSelector.h has been generated automatically
 // by the ROOT utility TTree::MakeSelector(). This class is derived
 // from the ROOT class TSelector. For more information on the TSelector
@@ -112,13 +113,17 @@ void RadialSelector::SlaveBegin(TTree * /*tree*/)
   GetOutputList()->Add(histCount);
 }
 
-Double_t RadialSelector::GetZforRadius(Double_t R,
-				       Double_t px, Double_t py, Double_t pz,
-				       Double_t vx, Double_t vy, Double_t vz) {
 
-  Double_t a = ( vx * vx + vy * vy);
-  Double_t b = 2.0 * (px *vx + py * vy);
-  Double_t c = px * px + py * py - R * R;
+/**
+ * @see RadialSelector.h
+ */
+Double_t RadialSelector::GetZforRadius(Double_t R,
+				       Double_t pvx, Double_t pvy, Double_t pvz,
+				       Double_t evx, Double_t evy, Double_t evz) {
+  
+  Double_t a = ( evx * evx + evy * evy);
+  Double_t b = 2.0 * (pvx *evx + pvy * evy);
+  Double_t c = pvx * pvx + pvy * pvy - R * R;
   Double_t delta = b * b - 4 * a * c;
 
   if (delta < 0) {
@@ -128,15 +133,18 @@ Double_t RadialSelector::GetZforRadius(Double_t R,
   // Only the larger root is needed, looking in the forward direction...
   Double_t Z1 = (- b + sqrt(delta)) / (2 * a);
   Double_t Z2 = (- b - sqrt(delta)) / (2 * a);
-  return vz * max(Z1, Z2) + pz;
+  return evz * max(Z1, Z2) + pvz;
 }
 
+/**
+ * @see RadialSelector.h
+ */
+Double_t RadialSelector::GetRadius(Double_t z0,
+				   Double_t pvx, Double_t pvy, Double_t pvz,
+				   Double_t evx, Double_t evy, Double_t evz) {
 
-Double_t RadialSelector::GetRadius(Double_t z0, Double_t px, Double_t py, Double_t pz,
-				   Double_t vx, Double_t vy, Double_t vz) {
-
-  Double_t tmp = (z0 - pz) / vz;
-  Double_t rad = sqrt( pow(px + tmp * vx, 2) + pow( py + tmp * vy, 2) );
+  Double_t tmp = (z0 - pvz) / evz;
+  Double_t rad = sqrt( pow(pvx + tmp * evx, 2) + pow( pvy + tmp * evy, 2) );
   return rad;
 }
 
@@ -160,14 +168,15 @@ Bool_t RadialSelector::Process(Long64_t entry)
   
   // General stuff
   fReader.SetEntry(entry);
-  eventCount++;
+  
+  // Using the bin at value 0 tocount the number of events
+  // Ugly to use histograms for that but this is merged automatically
+  // by Proof
   histCount->Fill(0);
   
   // Mass stuff
-  mmTotal += *D_MM;
   histMM->Fill(*D_MM);
 
-  
   // PV stats
   histPVr->Fill(sqrt(*D_PVY * *D_PVY + *D_PVX * *D_PVX));
   histPVz->Fill(*D_PVZ);
@@ -177,6 +186,9 @@ Bool_t RadialSelector::Process(Long64_t entry)
   TVector3 diffVertex(*D_VX - *D_PVX,
 		      *D_VY - *D_PVY,
 		      *D_VZ - *D_PVZ);
+  TVector3 primaryVertex(*D_PVX, *D_PVY, *D_PVZ);
+  TVector3 endVertex(*D_VX, *D_VY, *D_VZ);
+  
   if (*D_FROMB) {
     // Now checking the end vertex position
     histEVr_FromB->Fill(sqrt(*D_VY * *D_VY + *D_VX * *D_VX));
@@ -200,9 +212,8 @@ Bool_t RadialSelector::Process(Long64_t entry)
   histLifetime->Fill(ltime / *D_BPVLTIME);
 
   // Now establishing the acceptance
-  auto u = p;
   const Double_t radiusCut = 4.0; // Unit is mm
-  auto  zAtCutFollowingP = GetZforRadius(radiusCut, *D_PVX, *D_PVY, *D_PVZ, u.X(), u.Y(), u.Z());
+  auto  zAtCutFollowingP = GetZforRadius(radiusCut, *D_PVX, *D_PVY, *D_PVZ, p.X(), p.Y(), p.Z());
 
   Double_t acceptance = *D_BPVLTIME * (zAtCutFollowingP - *D_PVZ) / ( *D_VZ - *D_PVZ);
   histAcceptance->Fill(acceptance);
@@ -210,7 +221,7 @@ Bool_t RadialSelector::Process(Long64_t entry)
   
   // Checking the difference if we use the vertices irection instead
   auto v = diffVertex;
-  auto  zAtCutFollowingVertices = GetZforRadius(radiusCut, *D_PVX, *D_PVY, *D_PVZ, v.X(), v.Y(), v.Z());
+  auto  zAtCutFollowingVertices = GetZforRadius(radiusCut, *D_PVX, *D_PVY, *D_PVZ, diffVertex.X(), diffVertex.Y(), diffVertex.Z());
   histAcceptanceV->Fill(*D_BPVLTIME * (zAtCutFollowingVertices - *D_PVZ) / ( *D_VZ - *D_PVZ));
 
   // And we're done...
@@ -230,10 +241,11 @@ void RadialSelector::Terminate()
   // The Terminate() function is the last function to be called during
   // a query. It always runs on the client, it can be used to present
   // the results graphically or save the results to file.
-  std::cout << "D_MM: "<< mmTotal/eventCount << std::endl;
+
+  // Printing the total number of events (bin 1).
   std::cout << "Hist event count: " << histCount->GetBinContent(1) << std::endl;
   
-  c1 = new TCanvas("c1","Histogram checks",200,10,700,900);
+  TCanvas *c1 = new TCanvas("c1","Histogram checks",200,10,700,900);
   c1->Divide(2,3);
   c1->cd(1);
   histMM->Fit("gaus");
