@@ -112,17 +112,18 @@ public :
     * of R with the z axis (returns Nan if no solution).
     */
    Double_t GetZforRadius(Double_t R,
-			  Double_t pvx, Double_t pvy, Double_t pvz,
-			  Double_t evx, Double_t evy, Double_t evz);
+			  const TVector3 &pv,
+			  const TVector3 &ev);
+
 
    /**
     * Returns the distance to the z axis at z=z0,  for the trajectory of the 
-    * particle defined by a primary vertex (pvy, pvy, pvz) and 
-    *an end vertex (evx, evy, evy).
+    * particle defined by a primary vertex pv and 
+    * an end vertex ev.
     */
    Double_t GetRadius(Double_t z,
-		      Double_t pvx, Double_t pvy, Double_t pvz,
-		      Double_t evx, Double_t evy, Double_t evz);
+		      const TVector3 &pv,
+		      const TVector3 &ev);
       
    ClassDef(RadialSelector,0);
 };

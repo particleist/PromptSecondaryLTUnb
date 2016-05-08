@@ -100,7 +100,7 @@ void RadialSelector::SlaveBegin(TTree * /*tree*/)
   GetOutputList()->Add(histAcceptance);
 
   // histogram for the acceptance ratio
-  histAcceptanceRatio = new TH1D("AcceptanceRatioHist", "Ratio between max lifetime and actual value",
+  histAcceptanceRatio = new TH1D("AcceptanceRatioHist", "Ratio between max lifetime (following momentum) and actual value",
 		     500, 0, 200);
   GetOutputList()->Add(histAcceptanceRatio);
 
@@ -118,12 +118,12 @@ void RadialSelector::SlaveBegin(TTree * /*tree*/)
  * @see RadialSelector.h
  */
 Double_t RadialSelector::GetZforRadius(Double_t R,
-				       Double_t pvx, Double_t pvy, Double_t pvz,
-				       Double_t evx, Double_t evy, Double_t evz) {
-  
-  Double_t a = ( evx * evx + evy * evy);
-  Double_t b = 2.0 * (pvx *evx + pvy * evy);
-  Double_t c = pvx * pvx + pvy * pvy - R * R;
+				       const TVector3 &pv,
+				       const TVector3 &ev) {
+
+  Double_t a = ev.Perp2();
+  Double_t b = 2.0 * (pv.X() *ev.X() + pv.Y() * ev.Y());
+  Double_t c = pv.Perp2() - R * R;
   Double_t delta = b * b - 4 * a * c;
 
   if (delta < 0) {
@@ -133,18 +133,18 @@ Double_t RadialSelector::GetZforRadius(Double_t R,
   // Only the larger root is needed, looking in the forward direction...
   Double_t Z1 = (- b + sqrt(delta)) / (2 * a);
   Double_t Z2 = (- b - sqrt(delta)) / (2 * a);
-  return evz * max(Z1, Z2) + pvz;
+  return ev.Z() * max(Z1, Z2) + pv.Z();
 }
 
 /**
  * @see RadialSelector.h
  */
 Double_t RadialSelector::GetRadius(Double_t z0,
-				   Double_t pvx, Double_t pvy, Double_t pvz,
-				   Double_t evx, Double_t evy, Double_t evz) {
-
-  Double_t tmp = (z0 - pvz) / evz;
-  Double_t rad = sqrt( pow(pvx + tmp * evx, 2) + pow( pvy + tmp * evy, 2) );
+				   const TVector3 &pv,
+				   const TVector3 &ev) {
+  Double_t tmp = (z0 - pv.Z()) / ev.Z();
+  Double_t rad = sqrt(pow(pv.X() + tmp * ev.X(), 2)
+		      + pow( pv.Y() + tmp * ev.Y(), 2));
   return rad;
 }
 
@@ -168,7 +168,7 @@ Bool_t RadialSelector::Process(Long64_t entry)
   
   // General stuff
   fReader.SetEntry(entry);
-  
+
   // Using the bin at value 0 tocount the number of events
   // Ugly to use histograms for that but this is merged automatically
   // by Proof
@@ -177,52 +177,47 @@ Bool_t RadialSelector::Process(Long64_t entry)
   // Mass stuff
   histMM->Fill(*D_MM);
 
-  // PV stats
-  histPVr->Fill(sqrt(*D_PVY * *D_PVY + *D_PVX * *D_PVX));
-  histPVz->Fill(*D_PVZ);
-
   // Constructing the vectors
   TVector3 p(*D_PX, *D_PY, *D_PZ);
-  TVector3 diffVertex(*D_VX - *D_PVX,
-		      *D_VY - *D_PVY,
-		      *D_VZ - *D_PVZ);
   TVector3 primaryVertex(*D_PVX, *D_PVY, *D_PVZ);
   TVector3 endVertex(*D_VX, *D_VY, *D_VZ);
+  TVector3 diffVertex = endVertex - primaryVertex;
+  
+  // PV stats
+  histPVr->Fill(primaryVertex.Perp());
+  histPVz->Fill(primaryVertex.Z());
   
   if (*D_FROMB) {
     // Now checking the end vertex position
-    histEVr_FromB->Fill(sqrt(*D_VY * *D_VY + *D_VX * *D_VX));
-    histEVz_FromB->Fill(*D_VZ);
+    histEVr_FromB->Fill(endVertex.Perp());
+    histEVz_FromB->Fill(endVertex.Z());
     histPEta_FromB->Fill(p.Eta());
   } else {
     // Now checking the end vertex position
-    histEVr->Fill(sqrt(*D_VY * *D_VY + *D_VX * *D_VX));
-    histEVz->Fill(*D_VZ);
+    histEVr->Fill(endVertex.Perp());
+    histEVz->Fill(endVertex.Z());
     histPEta->Fill(p.Eta());
   }
 
-  // Checking the D_BPVDIRA
-  Double_t t1 = p.Unit().Dot(diffVertex.Unit());
-  Double_t t2 = p.Dot(diffVertex) / (p.Mag() * diffVertex.Mag());
-
   // Checking the lifetime
   Double_t fd = diffVertex.Mag();
-  Double_t c = TMath::C() * 1e3 / 1e9; // We need mm/ns in LHCb Units
+  const Double_t c = TMath::C() * 1e-6;// * 1e3 / 1e9;//We need mm/ns in LHCb Units
   Double_t ltime = fd * (*D_MM) / (p.Mag() * c);
   histLifetime->Fill(ltime / *D_BPVLTIME);
 
   // Now establishing the acceptance
   const Double_t radiusCut = 4.0; // Unit is mm
-  auto  zAtCutFollowingP = GetZforRadius(radiusCut, *D_PVX, *D_PVY, *D_PVZ, p.X(), p.Y(), p.Z());
+  auto  zAtCutFollowingP = GetZforRadius(radiusCut, primaryVertex, p);
 
-  Double_t acceptance = *D_BPVLTIME * (zAtCutFollowingP - *D_PVZ) / ( *D_VZ - *D_PVZ);
+  Double_t acceptanceRatio = (zAtCutFollowingP - primaryVertex.Z()) / (endVertex.Z() - primaryVertex.Z());
+  Double_t acceptance = *D_BPVLTIME * acceptanceRatio;
+   
   histAcceptance->Fill(acceptance);
-  histAcceptanceRatio->Fill((zAtCutFollowingP - *D_PVZ) / ( *D_VZ - *D_PVZ));
+  histAcceptanceRatio->Fill(acceptanceRatio);
   
-  // Checking the difference if we use the vertices irection instead
-  auto v = diffVertex;
-  auto  zAtCutFollowingVertices = GetZforRadius(radiusCut, *D_PVX, *D_PVY, *D_PVZ, diffVertex.X(), diffVertex.Y(), diffVertex.Z());
-  histAcceptanceV->Fill(*D_BPVLTIME * (zAtCutFollowingVertices - *D_PVZ) / ( *D_VZ - *D_PVZ));
+  // Checking the difference if we use the vertices direction instead
+  auto  zAtCutFollowingVertices = GetZforRadius(radiusCut, primaryVertex, diffVertex);
+  histAcceptanceV->Fill(*D_BPVLTIME * (zAtCutFollowingVertices - primaryVertex.Z()) / (endVertex.Z() - primaryVertex.Z()));
 
   // And we're done...
   return kTRUE;
