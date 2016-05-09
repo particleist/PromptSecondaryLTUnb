@@ -118,12 +118,12 @@ void RadialSelector::SlaveBegin(TTree * /*tree*/)
  * @see RadialSelector.h
  */
 Double_t RadialSelector::GetZforRadius(Double_t R,
-				       const TVector3 &pv,
-				       const TVector3 &ev) {
+				       const TVector3 &point,
+				       const TVector3 &direction) {
 
-  Double_t a = ev.Perp2();
-  Double_t b = 2.0 * (pv.X() *ev.X() + pv.Y() * ev.Y());
-  Double_t c = pv.Perp2() - R * R;
+  Double_t a = direction.Perp2();
+  Double_t b = 2.0 * (point.X() *direction.X() + point.Y() * direction.Y());
+  Double_t c = point.Perp2() - R * R;
   Double_t delta = b * b - 4 * a * c;
 
   if (delta < 0) {
@@ -133,18 +133,18 @@ Double_t RadialSelector::GetZforRadius(Double_t R,
   // Only the larger root is needed, looking in the forward direction...
   Double_t Z1 = (- b + sqrt(delta)) / (2 * a);
   Double_t Z2 = (- b - sqrt(delta)) / (2 * a);
-  return ev.Z() * max(Z1, Z2) + pv.Z();
+  return direction.Z() * max(Z1, Z2) + point.Z();
 }
 
 /**
  * @see RadialSelector.h
  */
 Double_t RadialSelector::GetRadius(Double_t z0,
-				   const TVector3 &pv,
-				   const TVector3 &ev) {
-  Double_t tmp = (z0 - pv.Z()) / ev.Z();
-  Double_t rad = sqrt(pow(pv.X() + tmp * ev.X(), 2)
-		      + pow( pv.Y() + tmp * ev.Y(), 2));
+				   const TVector3 &point,
+				   const TVector3 &direction) {
+  Double_t tmp = (z0 - point.Z()) / direction.Z();
+  Double_t rad = sqrt(pow(point.X() + tmp * direction.X(), 2)
+		      + pow( point.Y() + tmp * direction.Y(), 2));
   return rad;
 }
 

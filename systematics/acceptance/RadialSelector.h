@@ -107,23 +107,20 @@ public :
    virtual void    Terminate();
 
    /**
-    * Finds z for which the trajectory of the particle defined by a primary vertex
-    * (pvy, pvy, pvz) and an end vertex (evx, evy, evy) would exceed a distance
-    * of R with the z axis (returns Nan if no solution).
+    * Finds z for which line defined by a given point
+    * and a direction would exceed a distance of R 
+    * with the z axis (returns Nan if no solution).
     */
    Double_t GetZforRadius(Double_t R,
-			  const TVector3 &pv,
-			  const TVector3 &ev);
-
-
+			  const TVector3 &point,
+			  const TVector3 &direction);
    /**
-    * Returns the distance to the z axis at z=z0,  for the trajectory of the 
-    * particle defined by a primary vertex pv and 
-    * an end vertex ev.
+    * Returns the distance to the z axis at z=z0, for the line
+    * defined by a given and direction in space.
     */
-   Double_t GetRadius(Double_t z,
-		      const TVector3 &pv,
-		      const TVector3 &ev);
+   Double_t GetRadius(Double_t z0,
+		      const TVector3 &point,
+		      const TVector3 &direction);
       
    ClassDef(RadialSelector,0);
 };
