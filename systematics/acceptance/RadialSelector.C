@@ -308,8 +308,14 @@ void RadialSelector::Terminate()
   c3->Update();
 
   TCanvas *c4 = new TCanvas("c4","Ratio between lifetime and max lifetime",200,10,700,900);
-  c4->SetLogy();
+  c4->Divide(1, 2);
+  c4->cd(1);
   histAcceptanceRatio->DrawNormalized();
+  c4->cd(2);
+  auto fnorm = 1.0/histAcceptanceRatio->GetEntries();
+  auto hc = fnorm * *histAcceptanceRatio;
+  auto cumulhc = hc.GetCumulative();
+  cumulhc->Draw();
   c4->Update();
 
 }
