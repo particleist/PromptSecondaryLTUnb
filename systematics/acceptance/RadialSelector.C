@@ -312,8 +312,10 @@ void RadialSelector::Terminate()
   
   TCanvas *c3 = new TCanvas("c3","Acceptance",200,10,700,900);
   c3->SetLogy();
-  c3->SetTitle("Lifetime acceptance (ns)");
+  c3->SetTitle("Lifetime acceptance (ns)");  
+  histAcceptance->SetTitle("Lifetime acceptance effect due to 4mm radial cut");
   histAcceptance->SetStats(0);
+  histAcceptance->GetXaxis()->SetTitle("D0 lifetime (ns)");
   histAcceptance->DrawNormalized();
   histAcceptanceV->SetStats(0);
   histAcceptanceV->SetLineColor(kGreen);
