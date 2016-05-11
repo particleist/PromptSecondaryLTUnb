@@ -121,8 +121,15 @@ public :
    Double_t GetRadius(Double_t z0,
 		      const TVector3 &point,
 		      const TVector3 &direction);
+
+  /**
+   * Given a histogram, fills it by adding a step function
+   * with value 1 between [firstbin, bin(value)], and 0 between
+   * [bin(value) +1, max] 
+   */
+  void FillAcceptance(TH1D *hist, Double_t value);
       
-   ClassDef(RadialSelector,0);
+  ClassDef(RadialSelector,0);
 };
 
 #endif
