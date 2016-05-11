@@ -208,20 +208,38 @@ Bool_t RadialSelector::Process(Long64_t entry)
   // Now establishing the acceptance
   const Double_t radiusCut = 4.0; // Unit is mm
   auto  zAtCutFollowingP = GetZforRadius(radiusCut, primaryVertex, p);
-
   Double_t acceptanceRatio = (zAtCutFollowingP - primaryVertex.Z()) / (endVertex.Z() - primaryVertex.Z());
   Double_t acceptance = *D_BPVLTIME * acceptanceRatio;
-   
-  histAcceptance->Fill(acceptance);
+  FillAcceptance(histAcceptance, acceptance);
+
+  // Keeping a histogram of acceptance ratio
   histAcceptanceRatio->Fill(acceptanceRatio);
   
   // Checking the difference if we use the vertices direction instead
   auto  zAtCutFollowingVertices = GetZforRadius(radiusCut, primaryVertex, diffVertex);
-  histAcceptanceV->Fill(*D_BPVLTIME * (zAtCutFollowingVertices - primaryVertex.Z()) / (endVertex.Z() - primaryVertex.Z()));
+  Double_t acceptanceV = *D_BPVLTIME * (zAtCutFollowingVertices - primaryVertex.Z()) / (endVertex.Z() - primaryVertex.Z());
+  FillAcceptance(histAcceptanceV, acceptanceV);
 
   // And we're done...
   return kTRUE;
 }
+
+/**
+ * @See header
+ */
+void RadialSelector::FillAcceptance(TH1D *hist, Double_t value) 
+{
+   
+  TAxis *xaxis = hist->GetXaxis();
+  Int_t cutoffbin = xaxis->FindBin(value);
+  for (Int_t i = xaxis->GetFirst(); i <= cutoffbin; i++)
+  {
+      hist->AddBinContent(i);
+  }
+}
+
+
+
 
 void RadialSelector::SlaveTerminate()
 {
