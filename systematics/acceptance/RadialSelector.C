@@ -363,7 +363,6 @@ void RadialSelector::Terminate()
 
 
   TCanvas *c5 = new TCanvas("c5","Acceptance",200,10,700,900);
-  c5->SetLogy();
   c5->SetTitle("Lifetime acceptance (ns)");
   std::cout << "Nb of entries in histogram:" << histAcceptanceZ->GetEntries() << std::endl;
   histAcceptanceZ->Scale(1.0/nbevents);
@@ -380,6 +379,6 @@ void RadialSelector::Terminate()
   legendLfZ->AddEntry(histAcceptanceZ);
   legendLfZ->AddEntry(histAcceptanceVZ);
   legendLfZ->Draw("SAME");
-  c3->Update();
+  c5->Update();
 
 }
