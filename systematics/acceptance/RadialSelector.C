@@ -99,6 +99,12 @@ void RadialSelector::SlaveBegin(TTree * /*tree*/)
 		     500, 0, HIST_ACCEPTANCE_MAX);
   GetOutputList()->Add(histAcceptance);
 
+  // histogram for the acceptance lower lifetime
+  histAcceptanceZ = new TH1D("AcceptanceHistZ", "Lifetime acceptance (extended following momentum direction)",
+		     500, 0, HIST_ACCEPTANCE_MAXZOOM);
+  GetOutputList()->Add(histAcceptanceZ);
+
+  
   // histogram for the acceptance ratio
   histAcceptanceRatio = new TH1D("AcceptanceRatioHist", "Ratio between max lifetime (following momentum) and actual value",
 		     500, 0, 200);
@@ -108,6 +114,11 @@ void RadialSelector::SlaveBegin(TTree * /*tree*/)
 		     500, 0, HIST_ACCEPTANCE_MAX);
   GetOutputList()->Add(histAcceptanceV);
 
+  histAcceptanceVZ = new TH1D("AcceptanceVerticesHistZ", "Lifetime acceptance (extended following vertices direction)",
+		     500, 0, HIST_ACCEPTANCE_MAXZOOM);
+  GetOutputList()->Add(histAcceptanceVZ);
+
+  
   // Counters
   histCount = new TH1D("histCount", "Counters", 1, 0, 1);
   GetOutputList()->Add(histCount);
@@ -168,7 +179,29 @@ Bool_t RadialSelector::Process(Long64_t entry)
   
   // General stuff
   fReader.SetEntry(entry);
+  
+  // Constructing the vectors
+  TVector3 p(*D_PX, *D_PY, *D_PZ);
+  TVector3 primaryVertex(*D_PVX, *D_PVY, *D_PVZ);
+  TVector3 endVertex(*D_VX, *D_VY, *D_VZ);
+  TVector3 diffVertex = endVertex - primaryVertex;
+  
+  // Now establishing the acceptance
+  const Double_t radiusCut = 4.0; // Unit is mm
+  auto  zAtCutFollowingP = GetZforRadius(radiusCut, primaryVertex, p);
+  Double_t acceptanceRatio = (zAtCutFollowingP - primaryVertex.Z()) / (endVertex.Z() - primaryVertex.Z());
+  Double_t acceptance = *D_BPVLTIME * acceptanceRatio;
+  
+  // Ignore events with negative lifetime...
+  if ( *D_BPVLTIME < 0) {
+    return kTRUE;
+  }
 
+  // Ignore events with end vertex before PV...
+  if ((endVertex.Z() - primaryVertex.Z()) < 0) {
+    return kTRUE;
+  }
+  
   // Using the bin at value 0 tocount the number of events
   // Ugly to use histograms for that but this is merged automatically
   // by Proof
@@ -177,12 +210,6 @@ Bool_t RadialSelector::Process(Long64_t entry)
   // Mass stuff
   histMM->Fill(*D_MM);
 
-  // Constructing the vectors
-  TVector3 p(*D_PX, *D_PY, *D_PZ);
-  TVector3 primaryVertex(*D_PVX, *D_PVY, *D_PVZ);
-  TVector3 endVertex(*D_VX, *D_VY, *D_VZ);
-  TVector3 diffVertex = endVertex - primaryVertex;
-  
   // PV stats
   histPVr->Fill(primaryVertex.Perp());
   histPVz->Fill(primaryVertex.Z());
@@ -204,21 +231,19 @@ Bool_t RadialSelector::Process(Long64_t entry)
   const Double_t c = TMath::C() * 1e-6;// * 1e3 / 1e9;//We need mm/ns in LHCb Units
   Double_t ltime = fd * (*D_MM) / (p.Mag() * c);
   histLifetime->Fill(ltime / *D_BPVLTIME);
-
-  // Now establishing the acceptance
-  const Double_t radiusCut = 4.0; // Unit is mm
-  auto  zAtCutFollowingP = GetZforRadius(radiusCut, primaryVertex, p);
-  Double_t acceptanceRatio = (zAtCutFollowingP - primaryVertex.Z()) / (endVertex.Z() - primaryVertex.Z());
-  Double_t acceptance = *D_BPVLTIME * acceptanceRatio;
-  FillAcceptance(histAcceptance, acceptance);
-
+  
   // Keeping a histogram of acceptance ratio
   histAcceptanceRatio->Fill(acceptanceRatio);
-  
+
+  // Lifetime acceptance plot
+  FillAcceptance(histAcceptance, acceptance);
+  FillAcceptance(histAcceptanceZ, acceptance);
+
   // Checking the difference if we use the vertices direction instead
   auto  zAtCutFollowingVertices = GetZforRadius(radiusCut, primaryVertex, diffVertex);
   Double_t acceptanceV = *D_BPVLTIME * (zAtCutFollowingVertices - primaryVertex.Z()) / (endVertex.Z() - primaryVertex.Z());
   FillAcceptance(histAcceptanceV, acceptanceV);
+  FillAcceptance(histAcceptanceVZ, acceptanceV);
 
   // And we're done...
   return kTRUE;
@@ -236,9 +261,10 @@ void RadialSelector::FillAcceptance(TH1D *hist, Double_t value)
   {
       hist->AddBinContent(i);
   }
+  // Set the number of entries as it isn't set by AddBinContent
+  // If unset that creates problems for the merging in PROOF
+  hist->SetEntries(hist->GetEntries() + 1);
 }
-
-
 
 
 void RadialSelector::SlaveTerminate()
@@ -257,6 +283,7 @@ void RadialSelector::Terminate()
 
   // Printing the total number of events (bin 1).
   std::cout << "Hist event count: " << histCount->GetBinContent(1) << std::endl;
+  Int_t nbevents = histCount->GetBinContent(1);
   
   TCanvas *c1 = new TCanvas("c1","Histogram checks",200,10,700,900);
   c1->Divide(2,3);
@@ -310,16 +337,22 @@ void RadialSelector::Terminate()
   histLifetime->DrawNormalized();
   c2->Update();
   
+  TCanvas *c4 = new TCanvas("c4","Ratio between lifetime and max lifetime",200,10,700,900);
+  histAcceptanceRatio->DrawNormalized();
+  c4->Update();
+
   TCanvas *c3 = new TCanvas("c3","Acceptance",200,10,700,900);
   c3->SetLogy();
-  c3->SetTitle("Lifetime acceptance (ns)");  
+  c3->SetTitle("Lifetime acceptance (ns)");
+  histAcceptance->Scale(1.0/nbevents);
   histAcceptance->SetTitle("Lifetime acceptance effect due to 4mm radial cut");
   histAcceptance->SetStats(0);
-  histAcceptance->GetXaxis()->SetTitle("D0 lifetime (ns)");
-  histAcceptance->DrawNormalized();
+  histAcceptance->GetXaxis()->SetTitle("time (ns)");
+  histAcceptance->Draw();
+  histAcceptanceV->Scale(1.0/nbevents);
   histAcceptanceV->SetStats(0);
   histAcceptanceV->SetLineColor(kGreen);
-  histAcceptanceV->DrawNormalized("SAME");
+  histAcceptanceV->Draw("SAME");
   auto legendLf = new TLegend(0.3,0.85,0.89,0.89);
   legendLf->SetFillColor(0);
   legendLf->AddEntry(histAcceptance);
@@ -327,8 +360,26 @@ void RadialSelector::Terminate()
   legendLf->Draw("SAME");
   c3->Update();
 
-  TCanvas *c4 = new TCanvas("c4","Ratio between lifetime and max lifetime",200,10,700,900);
-  histAcceptanceRatio->DrawNormalized();
-  c4->Update();
+
+
+  TCanvas *c5 = new TCanvas("c5","Acceptance",200,10,700,900);
+  c5->SetLogy();
+  c5->SetTitle("Lifetime acceptance (ns)");
+  std::cout << "Nb of entries in histogram:" << histAcceptanceZ->GetEntries() << std::endl;
+  histAcceptanceZ->Scale(1.0/nbevents);
+  histAcceptanceZ->SetTitle("Lifetime acceptance effect due to 4mm radial cut");
+  histAcceptanceZ->SetStats(0);
+  histAcceptanceZ->GetXaxis()->SetTitle("time (ns)");
+  histAcceptanceZ->Draw();
+  histAcceptanceVZ->Scale(1.0/nbevents);
+  histAcceptanceVZ->SetStats(0);
+  histAcceptanceVZ->SetLineColor(kGreen);
+  histAcceptanceVZ->Draw("SAME");
+  auto legendLfZ = new TLegend(0.3,0.85,0.89,0.89);
+  legendLfZ->SetFillColor(0);
+  legendLfZ->AddEntry(histAcceptanceZ);
+  legendLfZ->AddEntry(histAcceptanceVZ);
+  legendLfZ->Draw("SAME");
+  c3->Update();
 
 }

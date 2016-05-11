@@ -69,11 +69,14 @@ public :
    TH1D *histLifetime;
    TH1D *histAcceptance;
    TH1D *histAcceptanceV;
+   TH1D *histAcceptanceZ;
+   TH1D *histAcceptanceVZ;
    TH1D *histAcceptanceRatio;
    TH1D *histCount;
 
    // Some constants
    const Double_t HIST_ACCEPTANCE_MAX = 0.5;
+   const Double_t HIST_ACCEPTANCE_MAXZOOM = 0.01;
    
  RadialSelector(TTree * /*tree*/ =0) :
      histMM(nullptr),
@@ -88,6 +91,8 @@ public :
      histLifetime(nullptr),
      histAcceptance(nullptr),
      histAcceptanceV(nullptr),
+     histAcceptanceZ(nullptr),
+     histAcceptanceVZ(nullptr),
      histAcceptanceRatio(nullptr),
      histCount(nullptr)
      { }
