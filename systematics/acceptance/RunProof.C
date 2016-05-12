@@ -20,6 +20,6 @@ void RunProof() {
   TDSet dset(chain);
 
   auto p = TProof::Open("");
-  p->Process(&dset, "RadialSelector.C");
+  p->Process(&dset, "RadialSelector.C+");
 
 }
