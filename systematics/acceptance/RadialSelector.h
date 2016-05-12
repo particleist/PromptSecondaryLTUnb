@@ -25,7 +25,10 @@
 #include <TTreeReaderArray.h>
 #include <TH1D.h>
 #include <TCanvas.h>
-
+#include <TVector3.h>
+#include <TLegend.h>
+#include <TMath.h>
+#include <map>
 
 /**
  * Definition of our TSelector
@@ -56,46 +59,13 @@ public :
    TTreeReaderValue<Double_t> D_BPVLTIME = {fReader, "D_BPVLTIME"};
    // Decay time w.r.t. BPV, t = (flight distance) * (mass) / (momentum).
 
-   // Our histograms
-   TH1D *histMM;
-   TH1D *histPVz;
-   TH1D *histPVr;
-   TH1D *histEVz;
-   TH1D *histEVr;
-   TH1D *histPEta;
-   TH1D *histEVz_FromB;
-   TH1D *histEVr_FromB;
-   TH1D *histPEta_FromB;
-   TH1D *histLifetime;
-   TH1D *histAcceptance;
-   TH1D *histAcceptanceV;
-   TH1D *histAcceptanceZ;
-   TH1D *histAcceptanceVZ;
-   TH1D *histAcceptanceRatio;
-   TH1D *histCount;
-
+   std::map<std::string, TH1D *> hists;
+   
    // Some constants
    const Double_t HIST_ACCEPTANCE_MAX = 0.5;
    const Double_t HIST_ACCEPTANCE_MAXZOOM = 0.01;
    
- RadialSelector(TTree * /*tree*/ =0) :
-     histMM(nullptr),
-     histPVz(nullptr),
-     histPVr(nullptr),
-     histEVz(nullptr),
-     histEVr(nullptr),
-     histPEta(nullptr),
-     histEVz_FromB(nullptr),
-     histEVr_FromB(nullptr),
-     histPEta_FromB(nullptr),
-     histLifetime(nullptr),
-     histAcceptance(nullptr),
-     histAcceptanceV(nullptr),
-     histAcceptanceZ(nullptr),
-     histAcceptanceVZ(nullptr),
-     histAcceptanceRatio(nullptr),
-     histCount(nullptr)
-     { }
+ RadialSelector(TTree * /*tree*/ =0) : hists() { }
    virtual ~RadialSelector() {}
    virtual Int_t   Version() const { return 2; }
    virtual void    Begin(TTree *tree);
@@ -133,7 +103,18 @@ public :
    * [bin(value) +1, max] 
    */
   void FillAcceptance(TH1D *hist, Double_t value);
-      
+
+  /**
+   * Creates a new histogram and keep a reference to the pointer.
+   */
+  TH1D* NewHist(const char *key, const char *description,
+		Int_t nbbins, Double_t min,  Double_t max);
+
+  /**
+   * gets a histogram from the map
+   */
+  TH1D* H(const char *key);
+  
   ClassDef(RadialSelector,0);
 };
 
